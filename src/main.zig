@@ -22,6 +22,17 @@ const Time = struct {
     previous_frame: u32,
 };
 
+const Keys = struct { w: bool, s: bool, a: bool, d: bool, sl: bool, sr: bool, m: bool };
+var k = Keys{
+    .w = false, // move keys
+    .s = false,
+    .a = false,
+    .d = false,
+    .sl = false, // strafe left/right
+    .sr = false,
+    .m = false, // "mouse" move
+};
+
 var t = Time{ .current_frame = 0, .previous_frame = 0 };
 
 const Color = enum {
@@ -103,6 +114,7 @@ fn display(renderer: *sdl.Renderer) void {
     if (t.current_frame - t.previous_frame >= frame_difference) {
         renderer.setColorRGB(0, 0, 0) catch unreachable;
         renderer.clear() catch unreachable;
+        move_player();
         draw3D(renderer);
         renderer.present();
 
@@ -110,6 +122,22 @@ fn display(renderer: *sdl.Renderer) void {
     }
 
     t.current_frame = sdl.getTicks();
+}
+
+fn move_player() void {
+    // direction
+    if (k.a and !k.m) std.debug.print("left\n", .{});
+    if (k.d and !k.m) std.debug.print("right\n", .{});
+    if (k.w and !k.m) std.debug.print("up\n", .{});
+    if (k.s and !k.m) std.debug.print("down\n", .{});
+    // strafe
+    if (k.sl) std.debug.print("strafe left\n", .{});
+    if (k.sr) std.debug.print("strafe right\n", .{});
+    // mouse move
+    if (k.a and k.m) std.debug.print("look up\n", .{});
+    if (k.d and k.m) std.debug.print("look down\n", .{});
+    if (k.w and k.m) std.debug.print("move up\n", .{});
+    if (k.s and k.m) std.debug.print("move down\n", .{});
 }
 
 pub fn main() !void {
@@ -144,11 +172,29 @@ pub fn main() !void {
                 },
                 .key_down => |key| {
                     switch (key.scancode) {
+                        .w => k.w = true,
+                        .a => k.a = true,
+                        .s => k.s = true,
+                        .d => k.d = true,
+                        .m => k.m = true,
+                        .comma => k.sl = true,
+                        .period => k.sr = true,
                         .escape => break :mainLoop,
                         else => std.log.info("key pressed: {}\n", .{key.scancode}),
                     }
                 },
-
+                .key_up => |key| {
+                    switch (key.scancode) {
+                        .w => k.w = false,
+                        .a => k.a = false,
+                        .s => k.s = false,
+                        .d => k.d = false,
+                        .m => k.m = false,
+                        .comma => k.sl = false,
+                        .period => k.sr = false,
+                        else => std.log.info("key pressed: {}\n", .{key.scancode}),
+                    }
+                },
                 else => {},
             }
         }
